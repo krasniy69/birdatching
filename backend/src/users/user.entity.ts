@@ -49,7 +49,7 @@ export class User {
   phone: string;
 
   @ApiProperty({ description: 'Telegram ID пользователя' })
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'telegramid' })
   telegramId: string;
 
   @ApiProperty({ description: 'Дата создания' })
