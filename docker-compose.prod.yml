@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: birdwatching
+      POSTGRES_USER: birduser
+      POSTGRES_PASSWORD: tuGIAoL0cPMZs3mb
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/src/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    # ports:
+    #   - "5432:5432"  # Закрыто для безопасности - доступ только внутри Docker сети
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U birduser -d birdwatching"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # ports:
+    #   - "6379:6379"  # Закрыто для безопасности - доступ только внутри Docker сети
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://birduser:tuGIAoL0cPMZs3mb@postgres:5432/birdwatching
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: birdwatching
+      DATABASE_USERNAME: birduser
+      DATABASE_PASSWORD: tuGIAoL0cPMZs3mb
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      JWT_SECRET: df311582b675c68e3732166dd0b9911d27dda72ddcfab67ac4095670316b147a
+      JWT_EXPIRES_IN: 7d
+      JWT_REFRESH_EXPIRES_IN: 30d
+      PORT: 3010
+    ports:
+      - "${BACKEND_PORT:-3010}:3010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - backend_logs:/app/logs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: https://excursionapp.mywire.org
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://excursionapp.mywire.org
+    ports:
+      - "${FRONTEND_PORT:-8080}:3011"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_logs:
