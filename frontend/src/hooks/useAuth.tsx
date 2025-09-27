@@ -6,8 +6,8 @@ import { User, AuthContextType, LoginRequest, RegisterRequest, AuthResponse } fr
 // Безопасные настройки cookies
 const getCookieOptions = (expires: number) => ({
   expires,
-  secure: process.env.NODE_ENV === 'production', // HTTPS only в production
-  sameSite: 'strict' as const, // Защита от CSRF
+  secure: false, // Отключаем secure для локальной разработки
+  sameSite: 'lax' as const, // Используем lax для локальной разработки
 });
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,22 +23,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Проверяем токен при загрузке приложения
   useEffect(() => {
     const token = Cookies.get('accessToken');
-    if (token) {
+    const refreshToken = Cookies.get('refreshToken');
+    console.log('=== AUTH CHECK ===');
+    console.log('Токен доступа:', token ? 'есть' : 'нет');
+    console.log('Refresh токен:', refreshToken ? 'есть' : 'нет');
+    console.log('Текущий пользователь:', user);
+    console.log('isLoading:', isLoading);
+    console.log('==================');
+    
+    if (token && !user) {
+      // Загружаем профиль только если есть токен, но нет пользователя
+      console.log('Загружаем профиль пользователя...');
       loadUserProfile();
+    } else if (!token) {
+      console.log('Токена нет, завершаем загрузку');
+      setIsLoading(false);
     } else {
+      console.log('Пользователь уже загружен, завершаем загрузку');
       setIsLoading(false);
     }
-  }, []);
+  }, [user]);
 
   const loadUserProfile = async () => {
+    // Если пользователь уже загружен, не загружаем повторно
+    if (user) {
+      console.log('Пользователь уже загружен, пропускаем загрузку профиля');
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      console.log('Загружаем профиль пользователя...');
+      const token = Cookies.get('accessToken');
+      console.log('Токен в cookies:', token ? 'есть' : 'нет');
+      
+      if (!token) {
+        console.log('Токена нет, завершаем загрузку');
+        setIsLoading(false);
+        return;
+      }
+
       const response = await api.get('/auth/profile');
+      console.log('Профиль загружен:', response.data);
       setUser(response.data);
     } catch (error) {
       console.error('Ошибка загрузки профиля:', error);
       // Если профиль не удалось загрузить, очищаем токены
       Cookies.remove('accessToken');
       Cookies.remove('refreshToken');
+      setUser(null); // Сбрасываем пользователя при ошибке
     } finally {
       setIsLoading(false);
     }
@@ -46,14 +79,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginRequest) => {
     try {
+      console.log('Начинаем авторизацию...');
       const response = await api.post<AuthResponse>('/auth/login', credentials);
       const { accessToken, refreshToken, user: userData } = response.data;
 
+      console.log('Авторизация успешна, сохраняем токены...');
       // Сохраняем токены в куки с безопасными настройками
       Cookies.set('accessToken', accessToken, getCookieOptions(7));
       Cookies.set('refreshToken', refreshToken, getCookieOptions(30));
 
+      console.log('Устанавливаем пользователя:', userData);
       setUser(userData);
+      setIsLoading(false); // Устанавливаем isLoading в false после успешного логина
+      console.log('Авторизация завершена');
     } catch (error: any) {
       console.error('Ошибка входа:', error);
       throw new Error(error.response?.data?.message || 'Ошибка входа в систему');
@@ -70,6 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       Cookies.set('refreshToken', refreshToken, getCookieOptions(30));
 
       setUser(userData);
+      setIsLoading(false); // Устанавливаем isLoading в false после успешной регистрации
     } catch (error: any) {
       console.error('Ошибка регистрации:', error);
       throw new Error(error.response?.data?.message || 'Ошибка регистрации');

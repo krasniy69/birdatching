@@ -47,7 +47,7 @@ const RegisterForm: React.FC = () => {
         firstName: data.firstName,
         lastName: data.lastName,
       });
-      router.push('/excursions'); // Редирект в ленту экскурсий после успешной регистрации
+      // Редирект происходит автоматически через useEffect в register.tsx
     } catch (err: any) {
       setError(err.message);
     } finally {

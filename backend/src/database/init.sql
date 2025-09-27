@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
     "vkId" VARCHAR(255),
     avatar VARCHAR(500),
     phone VARCHAR(20),
+    telegramid VARCHAR(255),
     "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -71,36 +72,6 @@ VALUES (
     'user'
 ) ON CONFLICT (email) DO NOTHING;
 
--- Создание enum для статусов бронирования
-CREATE TYPE booking_status AS ENUM ('CONFIRMED', 'RESERVE', 'CANCELLED');
-
--- Создание таблицы бронирований
-CREATE TABLE IF NOT EXISTS bookings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL,
-    "excursionId" UUID NOT NULL,
-    "peopleCount" INTEGER DEFAULT 1 CHECK ("peopleCount" > 0 AND "peopleCount" <= 3),
-    "binocularNeeded" BOOLEAN DEFAULT false,
-    status booking_status DEFAULT 'CONFIRMED',
-    notes TEXT,
-    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY ("excursionId") REFERENCES excursions(id) ON DELETE CASCADE
-);
-
--- Создание индексов для таблицы бронирований
-CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings("userId");
-CREATE INDEX IF NOT EXISTS idx_bookings_excursion_id ON bookings("excursionId");
-CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
-CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings("createdAt");
-
--- Создание триггера для обновления updatedAt в таблице bookings
-CREATE TRIGGER update_bookings_updated_at 
-    BEFORE UPDATE ON bookings 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
-
 -- Создание таблицы экскурсий
 CREATE TABLE IF NOT EXISTS excursions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -135,5 +106,35 @@ CREATE INDEX IF NOT EXISTS idx_excursions_created_at ON excursions("createdAt");
 -- Создание триггера для обновления updatedAt в таблице excursions
 CREATE TRIGGER update_excursions_updated_at 
     BEFORE UPDATE ON excursions 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Создание enum для статусов бронирования
+CREATE TYPE booking_status AS ENUM ('CONFIRMED', 'RESERVE', 'CANCELLED');
+
+-- Создание таблицы бронирований
+CREATE TABLE IF NOT EXISTS bookings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL,
+    "excursionId" UUID NOT NULL,
+    "peopleCount" INTEGER DEFAULT 1 CHECK ("peopleCount" > 0 AND "peopleCount" <= 3),
+    "binocularNeeded" BOOLEAN DEFAULT false,
+    status booking_status DEFAULT 'CONFIRMED',
+    notes TEXT,
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY ("excursionId") REFERENCES excursions(id) ON DELETE CASCADE
+);
+
+-- Создание индексов для таблицы бронирований
+CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings("userId");
+CREATE INDEX IF NOT EXISTS idx_bookings_excursion_id ON bookings("excursionId");
+CREATE INDEX IF NOT EXISTS idx_bookings_status ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_created_at ON bookings("createdAt");
+
+-- Создание триггера для обновления updatedAt в таблице bookings
+CREATE TRIGGER update_bookings_updated_at 
+    BEFORE UPDATE ON bookings 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();

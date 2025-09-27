@@ -1,3 +1,71 @@
+# Инструкции для ручного исправления на сервере
+
+## Подключение к серверу
+```bash
+ssh root@5.144.181.38
+# Пароль: 7TdYGUmsPt3ao1
+```
+
+## Шаги исправления
+
+### 1. Перейти в директорию проекта
+```bash
+cd /root/Birdwatching
+```
+
+### 2. Остановить контейнеры
+```bash
+docker-compose -f docker-compose.prod.yml down
+```
+
+### 3. Обновить nginx.conf
+Скопируйте содержимое файла nginx.conf из локальной версии в `/etc/nginx/sites-available/excursionapp`:
+
+```bash
+# Создайте резервную копию
+cp /etc/nginx/sites-available/excursionapp /etc/nginx/sites-available/excursionapp.backup
+
+# Отредактируйте файл
+nano /etc/nginx/sites-available/excursionapp
+```
+
+### 4. Проверить конфигурацию nginx
+```bash
+nginx -t
+```
+
+### 5. Перезапустить nginx
+```bash
+systemctl restart nginx
+```
+
+### 6. Пересобрать фронтенд
+```bash
+docker-compose -f docker-compose.prod.yml build --no-cache frontend
+```
+
+### 7. Запустить контейнеры
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### 8. Проверить статус
+```bash
+docker ps
+docker-compose -f docker-compose.prod.yml logs frontend
+docker-compose -f docker-compose.prod.yml logs backend
+```
+
+### 9. Проверить API
+```bash
+curl -I https://excursionapp.mywire.org/auth/login
+```
+
+## Содержимое обновленного nginx.conf
+
+Скопируйте это содержимое в `/etc/nginx/sites-available/excursionapp`:
+
+```nginx
 server {
     listen 80;
     server_name excursionapp.mywire.org 5.144.181.38;
@@ -128,3 +196,13 @@ server {
         application/xml+rss
         application/json;
 }
+```
+
+## Проверка результата
+
+После выполнения всех шагов:
+
+1. Откройте https://excursionapp.mywire.org/auth/login
+2. Попробуйте авторизоваться
+3. Проверьте Network tab в DevTools - не должно быть CORS ошибок
+4. API должен отвечать на https://excursionapp.mywire.org/auth/login

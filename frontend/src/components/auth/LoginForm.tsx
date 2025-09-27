@@ -36,7 +36,7 @@ const LoginForm: React.FC = () => {
 
     try {
       await login(data);
-      router.push('/excursions'); // Редирект в ленту экскурсий после успешного входа
+      // Редирект происходит автоматически через useEffect в login.tsx
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -22,11 +22,12 @@ const ExcursionsPage: React.FC = () => {
   }
 
   if (!user) {
+    // Перенаправляем на страницу авторизации если пользователь не авторизован
+    router.push('/auth/login');
     return (
       <Layout>
-        <div className="text-center py-16">
-          <h1 className="text-2xl font-semibold mb-4">Доступ ограничен</h1>
-          <p className="text-gray-600">Для просмотра экскурсий необходимо войти в систему</p>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-lg">Перенаправление...</div>
         </div>
       </Layout>
     );

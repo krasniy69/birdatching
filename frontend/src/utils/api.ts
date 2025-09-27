@@ -3,11 +3,16 @@ import Cookies from 'js-cookie';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3010';
 
+// Отладочная информация
+console.log('API_URL:', API_URL);
+console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
 // Безопасные настройки cookies
 const getCookieOptions = (expires: number) => ({
   expires,
-  secure: process.env.NODE_ENV === 'production', // HTTPS only в production
-  sameSite: 'strict' as const, // Защита от CSRF
+  secure: false, // Отключаем secure для локальной разработки
+  sameSite: 'lax' as const, // Используем lax для локальной разработки
   // httpOnly: false - оставляем false для клиентского доступа
 });
 
