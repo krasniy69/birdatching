@@ -138,3 +138,64 @@ CREATE TRIGGER update_bookings_updated_at
     BEFORE UPDATE ON bookings 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Создание таблицы категорий экскурсий
+CREATE TABLE IF NOT EXISTS categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL UNIQUE,
+    description TEXT,
+    color VARCHAR(7) DEFAULT '#3B82F6', -- hex цвет для UI
+    icon VARCHAR(50), -- название иконки
+    "isActive" BOOLEAN DEFAULT true,
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Создание индексов для таблицы категорий
+CREATE INDEX IF NOT EXISTS idx_categories_name ON categories(name);
+CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories("isActive");
+
+-- Создание триггера для обновления updatedAt в таблице categories
+CREATE TRIGGER update_categories_updated_at 
+    BEFORE UPDATE ON categories 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Создание таблицы связи экскурсий и категорий (многие ко многим)
+CREATE TABLE IF NOT EXISTS excursion_categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "excursionId" UUID NOT NULL,
+    "categoryId" UUID NOT NULL,
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("excursionId") REFERENCES excursions(id) ON DELETE CASCADE,
+    FOREIGN KEY ("categoryId") REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE("excursionId", "categoryId")
+);
+
+-- Создание индексов для таблицы excursion_categories
+CREATE INDEX IF NOT EXISTS idx_excursion_categories_excursion_id ON excursion_categories("excursionId");
+CREATE INDEX IF NOT EXISTS idx_excursion_categories_category_id ON excursion_categories("categoryId");
+
+-- Создание таблицы подписок пользователей на категории
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL,
+    "categoryId" UUID NOT NULL,
+    "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY ("categoryId") REFERENCES categories(id) ON DELETE CASCADE,
+    UNIQUE("userId", "categoryId")
+);
+
+-- Создание индексов для таблицы subscriptions
+CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions("userId");
+CREATE INDEX IF NOT EXISTS idx_subscriptions_category_id ON subscriptions("categoryId");
+
+-- Добавление тестовых категорий
+INSERT INTO categories (name, description, color, icon) VALUES 
+    ('Птицы леса', 'Экскурсии по лесным массивам для наблюдения за лесными птицами', '#10B981', 'tree'),
+    ('Водоплавающие', 'Наблюдение за водоплавающими птицами у водоемов', '#3B82F6', 'water'),
+    ('Хищные птицы', 'Экскурсии для наблюдения за хищными птицами', '#EF4444', 'eagle'),
+    ('Перелетные птицы', 'Наблюдение за миграцией птиц в сезонные периоды', '#F59E0B', 'bird'),
+    ('Городские птицы', 'Экскурсии по городским паркам и скверам', '#8B5CF6', 'city')
+ON CONFLICT (name) DO NOTHING;

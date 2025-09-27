@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '@/utils/api';
 import { Excursion, CreateExcursionRequest, UpdateExcursionRequest } from '@/types/excursions';
 
-export const useExcursions = (onlyMy = false) => {
+export const useExcursions = (onlyMy = false, categoryIds?: string[]) => {
   const [excursions, setExcursions] = useState<Excursion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -11,8 +11,18 @@ export const useExcursions = (onlyMy = false) => {
     try {
       setIsLoading(true);
       setError(null);
-      const params = onlyMy ? '?my=true' : '';
-      const response = await api.get<Excursion[]>(`/excursions${params}`);
+      
+      const params = new URLSearchParams();
+      if (onlyMy) {
+        params.append('my', 'true');
+      }
+      if (categoryIds && categoryIds.length > 0) {
+        params.append('categories', categoryIds.join(','));
+      }
+      
+      const queryString = params.toString();
+      const url = `/excursions${queryString ? `?${queryString}` : ''}`;
+      const response = await api.get<Excursion[]>(url);
       setExcursions(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Ошибка загрузки экскурсий');
@@ -65,7 +75,7 @@ export const useExcursions = (onlyMy = false) => {
 
   useEffect(() => {
     fetchExcursions();
-  }, [onlyMy]);
+  }, [onlyMy, categoryIds]);
 
   return {
     excursions,

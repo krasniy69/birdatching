@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from '../users/user.entity';
+import { ExcursionCategory } from './excursion-category.entity';
 
 @Entity('excursions')
 export class Excursion {
@@ -88,4 +89,8 @@ export class Excursion {
   @ApiProperty({ description: 'Дата обновления' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  // Связь с категориями через промежуточную таблицу
+  @OneToMany(() => ExcursionCategory, excursionCategory => excursionCategory.excursion)
+  excursionCategories: ExcursionCategory[];
 }

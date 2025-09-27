@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsDateString, IsInt, IsOptional, IsNumber, Min, Max, IsBoolean, IsUUID } from 'class-validator';
+import { IsString, IsDateString, IsInt, IsOptional, IsNumber, Min, Max, IsBoolean, IsUUID, IsArray } from 'class-validator';
 
 export class CreateExcursionDto {
   @ApiProperty({ description: 'Название экскурсии', example: 'Утренние птицы в Сокольниках' })
@@ -80,6 +80,12 @@ export class CreateExcursionDto {
   @Min(1)
   @Max(5)
   difficulty?: number;
+
+  @ApiProperty({ description: 'ID категорий экскурсии', example: ['uuid1', 'uuid2'], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  categoryIds?: string[];
 }
 
 export class UpdateExcursionDto {
@@ -173,4 +179,10 @@ export class UpdateExcursionDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @ApiProperty({ description: 'ID категорий экскурсии', example: ['uuid1', 'uuid2'], required: false })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  categoryIds?: string[];
 }

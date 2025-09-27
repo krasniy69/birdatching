@@ -5,6 +5,7 @@ import { Excursion } from './excursion.entity';
 import { CreateExcursionDto, UpdateExcursionDto } from './dto/excursion.dto';
 import { UserRole } from '../users/user.entity';
 import { Booking } from '../bookings/booking.entity';
+import { ExcursionCategory } from './excursion-category.entity';
 
 @Injectable()
 export class ExcursionsService {
@@ -13,11 +14,21 @@ export class ExcursionsService {
     private excursionsRepository: Repository<Excursion>,
     @InjectRepository(Booking)
     private bookingsRepository: Repository<Booking>,
+    @InjectRepository(ExcursionCategory)
+    private excursionCategoryRepository: Repository<ExcursionCategory>,
   ) {}
 
   async create(createExcursionDto: CreateExcursionDto): Promise<Excursion> {
-    const excursion = this.excursionsRepository.create(createExcursionDto);
-    return this.excursionsRepository.save(excursion);
+    const { categoryIds, ...excursionData } = createExcursionDto;
+    const excursion = this.excursionsRepository.create(excursionData);
+    const savedExcursion = await this.excursionsRepository.save(excursion);
+    
+    // Связываем с категориями, если они указаны
+    if (categoryIds && categoryIds.length > 0) {
+      await this.addCategoriesToExcursion(savedExcursion.id, categoryIds);
+    }
+    
+    return this.findOneWithCategories(savedExcursion.id);
   }
 
   async findAll(userRole?: UserRole, userId?: string): Promise<Excursion[]> {
@@ -69,8 +80,16 @@ export class ExcursionsService {
       throw new ForbiddenException('Вы можете редактировать только свои экскурсии');
     }
 
-    Object.assign(excursion, updateExcursionDto);
-    return this.excursionsRepository.save(excursion);
+    const { categoryIds, ...excursionData } = updateExcursionDto;
+    Object.assign(excursion, excursionData);
+    const savedExcursion = await this.excursionsRepository.save(excursion);
+    
+    // Обновляем связи с категориями, если они указаны
+    if (categoryIds !== undefined) {
+      await this.addCategoriesToExcursion(savedExcursion.id, categoryIds);
+    }
+    
+    return this.findOneWithCategories(savedExcursion.id, userRole, userId);
   }
 
   async remove(id: string, userRole?: UserRole, userId?: string): Promise<void> {
@@ -196,6 +215,71 @@ export class ExcursionsService {
       totalConfirmed: confirmed.reduce((sum, booking) => sum + booking.peopleCount, 0),
       totalReserve: reserve.reduce((sum, booking) => sum + booking.peopleCount, 0)
     };
+  }
+
+  // Методы для работы с категориями
+  async findAllWithCategories(userRole?: UserRole, userId?: string, categoryIds?: string[]): Promise<Excursion[]> {
+    const queryBuilder = this.excursionsRepository
+      .createQueryBuilder('excursion')
+      .leftJoinAndSelect('excursion.guide', 'guide')
+      .leftJoinAndSelect('excursion.excursionCategories', 'excursionCategory')
+      .leftJoinAndSelect('excursionCategory.category', 'category')
+      .where('excursion.isActive = :isActive', { isActive: true })
+      .orderBy('excursion.date', 'ASC')
+      .addOrderBy('excursion.time', 'ASC');
+
+    // Если экскурсовод - показываем только его экскурсии
+    if (userRole === UserRole.GUIDE && userId) {
+      queryBuilder.andWhere('excursion.guideId = :userId', { userId });
+    }
+
+    // Фильтрация по категориям
+    if (categoryIds && categoryIds.length > 0) {
+      queryBuilder.andWhere('category.id IN (:...categoryIds)', { categoryIds });
+    }
+
+    return queryBuilder.getMany();
+  }
+
+  async findOneWithCategories(id: string, userRole?: UserRole, userId?: string): Promise<Excursion> {
+    const queryBuilder = this.excursionsRepository
+      .createQueryBuilder('excursion')
+      .leftJoinAndSelect('excursion.guide', 'guide')
+      .leftJoinAndSelect('excursion.excursionCategories', 'excursionCategory')
+      .leftJoinAndSelect('excursionCategory.category', 'category')
+      .where('excursion.id = :id', { id });
+
+    // Если экскурсовод - проверяем, что это его экскурсия
+    if (userRole === UserRole.GUIDE && userId) {
+      queryBuilder.andWhere('excursion.guideId = :userId', { userId });
+    }
+
+    const excursion = await queryBuilder.getOne();
+
+    if (!excursion) {
+      throw new NotFoundException('Экскурсия не найдена');
+    }
+
+    return excursion;
+  }
+
+  async addCategoriesToExcursion(excursionId: string, categoryIds: string[]): Promise<void> {
+    // Удаляем существующие связи
+    await this.excursionCategoryRepository.delete({ excursionId });
+
+    // Создаем новые связи
+    const excursionCategories = categoryIds.map(categoryId => 
+      this.excursionCategoryRepository.create({
+        excursionId,
+        categoryId
+      })
+    );
+
+    await this.excursionCategoryRepository.save(excursionCategories);
+  }
+
+  async removeCategoriesFromExcursion(excursionId: string): Promise<void> {
+    await this.excursionCategoryRepository.delete({ excursionId });
   }
 }
 

@@ -25,6 +25,16 @@ export interface Excursion {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  excursionCategories?: {
+    id: string;
+    category: {
+      id: string;
+      name: string;
+      description?: string;
+      color: string;
+      icon?: string;
+    };
+  }[];
 }
 
 export interface CreateExcursionRequest {
@@ -44,6 +54,7 @@ export interface CreateExcursionRequest {
   price?: number;
   duration?: number;
   difficulty?: number;
+  categoryIds?: string[];
 }
 
 export interface UpdateExcursionRequest {
@@ -64,4 +75,5 @@ export interface UpdateExcursionRequest {
   duration?: number;
   difficulty?: number;
   isActive?: boolean;
+  categoryIds?: string[];
 }

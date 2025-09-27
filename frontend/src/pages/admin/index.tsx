@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUsers } from '@/hooks/useUsers';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import RoleSelector from '@/components/admin/RoleSelector';
 
 const AdminPage: React.FC = () => {
@@ -56,8 +57,65 @@ const AdminPage: React.FC = () => {
             Панель администратора
           </h1>
           <p className="text-gray-600 mt-2">
-            Управление пользователями и их ролями
+            Управление пользователями, категориями и экскурсиями
           </p>
+        </div>
+
+        {/* Быстрые действия */}
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>📊 Статистика</CardTitle>
+              <CardDescription>
+                Просмотр статистики по экскурсиям
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => router.push('/admin/statistics')}
+              >
+                Открыть статистику
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>🏷️ Категории</CardTitle>
+              <CardDescription>
+                Управление категориями экскурсий
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => router.push('/admin/categories')}
+              >
+                Управлять категориями
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>🎯 Экскурсии</CardTitle>
+              <CardDescription>
+                Создание и редактирование экскурсий
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => router.push('/admin/excursions/create')}
+              >
+                Создать экскурсию
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card>

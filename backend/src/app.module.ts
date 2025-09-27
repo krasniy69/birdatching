@@ -7,6 +7,8 @@ import { UsersModule } from './users/users.module';
 import { ExcursionsModule } from './excursions/excursions.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { CategoriesModule } from './categories/categories.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { DatabaseConfig } from './config/database.config';
 
 @Module({
@@ -39,6 +41,8 @@ import { DatabaseConfig } from './config/database.config';
     ExcursionsModule,
     BookingsModule,
     TelegramModule,
+    CategoriesModule,
+    SubscriptionsModule,
   ],
   controllers: [],
   providers: [],

@@ -46,16 +46,21 @@ export class ExcursionsController {
   @Get()
   @ApiOperation({ summary: 'Получить список экскурсий' })
   @ApiQuery({ name: 'my', required: false, description: 'Только мои экскурсии (для экскурсоводов)' })
+  @ApiQuery({ name: 'categories', required: false, description: 'Фильтр по категориям (через запятую)' })
   @ApiResponse({ status: 200, description: 'Список экскурсий' })
-  async findAll(@Request() req, @Query('my') onlyMy?: string) {
+  async findAll(@Request() req, @Query('my') onlyMy?: string, @Query('categories') categories?: string) {
     const { role: userRole, userId } = req.user;
     
     // Если экскурсовод запрашивает только свои экскурсии или это его роль по умолчанию
     const shouldFilterByGuide = userRole === UserRole.GUIDE || onlyMy === 'true';
     
-    return this.excursionsService.findAll(
+    // Парсим категории из строки
+    const categoryIds = categories ? categories.split(',').filter(id => id.trim()) : undefined;
+    
+    return this.excursionsService.findAllWithCategories(
       shouldFilterByGuide ? userRole : undefined,
-      shouldFilterByGuide ? userId : undefined
+      shouldFilterByGuide ? userId : undefined,
+      categoryIds
     );
   }
 

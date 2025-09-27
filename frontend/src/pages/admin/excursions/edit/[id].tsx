@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '@/hooks/useAuth';
 import { useExcursions } from '@/hooks/useExcursions';
 import { useUsers } from '@/hooks/useUsers';
+import { useCategories } from '@/hooks/useCategories';
 import Layout from '@/components/layout/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,12 +28,14 @@ interface ExcursionFormData {
   duration?: number;
   difficulty: number;
   isActive: boolean;
+  categoryIds: string[];
 }
 
 const EditExcursionPage: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { users, isLoading: usersLoading } = useUsers();
   const { getExcursion, updateExcursion } = useExcursions();
+  const { categories } = useCategories();
   const router = useRouter();
   const { id } = router.query;
   const [excursion, setExcursion] = useState<Excursion | null>(null);
@@ -76,6 +79,7 @@ const EditExcursionPage: React.FC = () => {
         duration: data.duration || undefined,
         difficulty: data.difficulty,
         isActive: data.isActive,
+        categoryIds: data.excursionCategories?.map(ec => ec.category.id) || [],
       });
 
       // Устанавливаем координаты
@@ -282,6 +286,35 @@ const EditExcursionPage: React.FC = () => {
                 />
                 {errors.location && (
                   <p className="text-sm text-red-600 mt-1">{errors.location.message}</p>
+                )}
+              </div>
+
+              {/* Выбор категорий */}
+              <div>
+                <Label>Категории экскурсии</Label>
+                <div className="mt-2 space-y-2">
+                  {categories.map((category) => (
+                    <label key={category.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        value={category.id}
+                        {...register('categoryIds')}
+                        className="rounded border-gray-300"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color }}
+                        />
+                        <span className="text-sm">{category.name}</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {categories.length === 0 && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Категории не найдены. Создайте категории в разделе управления.
+                  </p>
                 )}
               </div>
 
