@@ -35,6 +35,12 @@ const Header: React.FC = () => {
           >
             Мои записи
           </Link>
+          <Link 
+            href="/categories" 
+            className="text-gray-700 hover:text-primary transition-colors"
+          >
+            Категории
+          </Link>
           
           {user.role === 'admin' && (
             <>
@@ -43,6 +49,12 @@ const Header: React.FC = () => {
                 className="text-gray-700 hover:text-primary transition-colors"
               >
                 Админ-панель
+              </Link>
+              <Link 
+                href="/admin/categories" 
+                className="text-gray-700 hover:text-primary transition-colors"
+              >
+                Категории
               </Link>
               <Link 
                 href="/admin/statistics" 
