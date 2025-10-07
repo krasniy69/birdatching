@@ -75,7 +75,8 @@ export const useExcursions = (onlyMy = false, categoryIds?: string[]) => {
 
   useEffect(() => {
     fetchExcursions();
-  }, [onlyMy, categoryIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onlyMy, categoryIds ? categoryIds.join(',') : '']);
 
   return {
     excursions,

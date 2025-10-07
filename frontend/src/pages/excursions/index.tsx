@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 
 const ExcursionsPage: React.FC = () => {
-  const { user, isLoading: authLoading } = useAuth();
-  const { subscriptions, categoriesWithStatus } = useSubscriptions();
+  const { user } = useAuth();
   const router = useRouter();
+  
+  // Получаем подписки только если пользователь авторизован
+  const { subscriptions } = user ? useSubscriptions() : { subscriptions: [] };
   
   // Получаем ID подписанных категорий
   const subscribedCategoryIds = subscriptions.map(sub => sub.categoryId);
@@ -21,23 +23,11 @@ const ExcursionsPage: React.FC = () => {
   
   const { excursions, isLoading, error } = useExcursions(false, categoryIdsToUse);
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-lg">Загрузка...</div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (!user) {
-    // Перенаправляем на страницу авторизации если пользователь не авторизован
-    router.push('/auth/login');
-    return (
-      <Layout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-lg">Перенаправление...</div>
         </div>
       </Layout>
     );
@@ -84,6 +74,19 @@ const ExcursionsPage: React.FC = () => {
             <p className="text-gray-600 mt-2">
               Выберите интересную экскурсию и присоединяйтесь к наблюдению за птицами
             </p>
+            {!user && (
+              <div className="mt-2 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-green-800">
+                  💡 <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-green-600 underline font-medium"
+                    onClick={() => router.push('/auth/login')}
+                  >
+                    Войдите
+                  </Button>, чтобы записаться на экскурсию
+                </p>
+              </div>
+            )}
             {shouldFilterBySubscriptions && (
               <div className="mt-2 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-800">
@@ -115,6 +118,21 @@ const ExcursionsPage: React.FC = () => {
           </div>
           
           <div className="flex space-x-2">
+            {!user && (
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={() => router.push('/auth/login')}
+                >
+                  Войти
+                </Button>
+                <Button 
+                  onClick={() => router.push('/auth/register')}
+                >
+                  Регистрация
+                </Button>
+              </>
+            )}
             {user?.role === 'user' && (
               <Button 
                 variant="outline"
@@ -197,9 +215,15 @@ const ExcursionsPage: React.FC = () => {
                   
                   <Button 
                     size="sm"
-                    onClick={() => router.push(`/excursions/${excursion.id}`)}
+                    onClick={() => {
+                      if (!user) {
+                        router.push('/auth/login');
+                      } else {
+                        router.push(`/excursions/${excursion.id}`);
+                      }
+                    }}
                   >
-                    Подробнее
+                    {user ? 'Подробнее' : 'Войти и записаться'}
                   </Button>
                 </div>
               </CardContent>
