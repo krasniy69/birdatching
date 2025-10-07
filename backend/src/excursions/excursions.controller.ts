@@ -20,14 +20,13 @@ import { UserRole } from '../users/user.entity';
 
 @ApiTags('Экскурсии')
 @Controller('excursions')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class ExcursionsController {
   constructor(private readonly excursionsService: ExcursionsService) {}
 
   @Post()
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Создать новую экскурсию (только для админа)' })
   @ApiResponse({ status: 201, description: 'Экскурсия создана' })
   @ApiResponse({ status: 403, description: 'Доступ запрещен' })
@@ -49,7 +48,9 @@ export class ExcursionsController {
   @ApiQuery({ name: 'categories', required: false, description: 'Фильтр по категориям (через запятую)' })
   @ApiResponse({ status: 200, description: 'Список экскурсий' })
   async findAll(@Request() req, @Query('my') onlyMy?: string, @Query('categories') categories?: string) {
-    const { role: userRole, userId } = req.user;
+    // Получаем данные пользователя если он авторизован (опционально)
+    const userRole = req.user?.role;
+    const userId = req.user?.userId;
     
     // Если экскурсовод запрашивает только свои экскурсии или это его роль по умолчанию
     const shouldFilterByGuide = userRole === UserRole.GUIDE || onlyMy === 'true';
@@ -65,8 +66,9 @@ export class ExcursionsController {
   }
 
   @Get('statistics')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Получить статистику по экскурсиям (только для админа)' })
   @ApiResponse({ status: 200, description: 'Статистика экскурсий' })
   async getStatistics() {
@@ -74,8 +76,9 @@ export class ExcursionsController {
   }
 
   @Get(':id/bookings')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.GUIDE)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Получить список участников экскурсии (админ или экскурсовод)' })
   @ApiParam({ name: 'id', description: 'ID экскурсии' })
   @ApiResponse({ status: 200, description: 'Список участников экскурсии' })
@@ -92,13 +95,16 @@ export class ExcursionsController {
   @ApiResponse({ status: 200, description: 'Данные экскурсии' })
   @ApiResponse({ status: 404, description: 'Экскурсия не найдена' })
   async findOne(@Param('id') id: string, @Request() req) {
-    const { role: userRole, userId } = req.user;
+    // Получаем данные пользователя если он авторизован (опционально)
+    const userRole = req.user?.role;
+    const userId = req.user?.userId;
     return this.excursionsService.findOne(id, userRole, userId);
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.GUIDE)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Обновить экскурсию (админ или экскурсовод)' })
   @ApiParam({ name: 'id', description: 'ID экскурсии' })
   @ApiResponse({ status: 200, description: 'Экскурсия обновлена' })
@@ -114,8 +120,9 @@ export class ExcursionsController {
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.GUIDE)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Удалить экскурсию (админ или экскурсовод)' })
   @ApiParam({ name: 'id', description: 'ID экскурсии' })
   @ApiResponse({ status: 200, description: 'Экскурсия удалена' })
