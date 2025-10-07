@@ -266,3 +266,4 @@ docker-compose -f docker-compose.prod.yml exec postgres psql -U birduser -d bird
 
 
 
+

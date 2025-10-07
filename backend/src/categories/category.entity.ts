@@ -36,3 +36,4 @@ export class Category {
   @OneToMany(() => Subscription, subscription => subscription.category)
   subscriptions: Subscription[];
 }
+

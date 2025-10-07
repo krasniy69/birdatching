@@ -114,3 +114,4 @@ export class SubscriptionsService {
     return subscriptions.map(sub => sub.categoryId);
   }
 }
+

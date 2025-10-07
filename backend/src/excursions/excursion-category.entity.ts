@@ -25,3 +25,4 @@ export class ExcursionCategory {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 }
+

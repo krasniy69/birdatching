@@ -11,3 +11,4 @@ import { Category } from './category.entity';
   exports: [CategoriesService],
 })
 export class CategoriesModule {}
+

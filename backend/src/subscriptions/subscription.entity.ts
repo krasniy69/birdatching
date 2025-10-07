@@ -25,3 +25,4 @@ export class Subscription {
   @JoinColumn({ name: 'categoryId' })
   category: Category;
 }
+

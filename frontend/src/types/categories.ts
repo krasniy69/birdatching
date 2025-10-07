@@ -50,3 +50,4 @@ export interface UserSubscriptionsResponse {
     isSubscribed: boolean;
   }[];
 }
+

@@ -37,6 +37,25 @@ export default function CategoriesPage() {
     );
   }
 
+  // Если есть ошибка авторизации, перенаправляем на страницу входа
+  if (error && error.includes('Unauthorized')) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+            <p className="font-bold">Требуется авторизация</p>
+            <p className="mt-2">Для просмотра категорий необходимо войти в систему.</p>
+            <div className="mt-4">
+              <a href="/auth/login">
+                <Button>Войти в систему</Button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="container mx-auto px-4 py-8">
@@ -50,7 +69,8 @@ export default function CategoriesPage() {
 
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
+            <p className="font-bold">Ошибка загрузки</p>
+            <p className="mt-1">{error}</p>
           </div>
         )}
 
@@ -128,3 +148,4 @@ export default function CategoriesPage() {
     </Layout>
   );
 }
+

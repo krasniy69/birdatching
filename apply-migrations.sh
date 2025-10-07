@@ -61,3 +61,4 @@ docker exec birdwatching-postgres-1 psql -U birduser -d birdwatching -c "\dt"
 
 echo "🎯 Проверка категорий:"
 docker exec birdwatching-postgres-1 psql -U birduser -d birdwatching -c "SELECT name, color FROM categories;"
+

@@ -12,3 +12,4 @@ import { Category } from '../categories/category.entity';
   exports: [SubscriptionsService],
 })
 export class SubscriptionsModule {}
+

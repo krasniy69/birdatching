@@ -34,3 +34,4 @@ echo "🗄️ PostgreSQL: localhost:3012"
 echo "📦 Redis: localhost:3013"
 echo ""
 echo "📚 API документация: http://localhost:3010/api/docs"
+

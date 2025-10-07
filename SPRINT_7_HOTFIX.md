@@ -132,3 +132,4 @@ docker restart birdwatching-backend-1
 - 📚 API Docs: http://localhost:3010/api/docs
 
 Все функции Спринта 7 работают корректно! ✅
+

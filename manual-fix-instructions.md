@@ -206,3 +206,4 @@ server {
 2. Попробуйте авторизоваться
 3. Проверьте Network tab в DevTools - не должно быть CORS ошибок
 4. API должен отвечать на https://excursionapp.mywire.org/auth/login
+

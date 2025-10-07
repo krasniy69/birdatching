@@ -30,3 +30,4 @@ export class UserSubscriptionsResponseDto {
     isSubscribed: boolean;
   }[];
 }
+

@@ -77,3 +77,4 @@ curl -X POST https://excursionapp.mywire.org/auth/login \
 При проблемах обращайтесь к документации:
 - `DEPLOYMENT_FIX_REPORT.md` - Подробный отчет
 - `scripts/fix-deployment/README.md` - Описание скриптов
+
