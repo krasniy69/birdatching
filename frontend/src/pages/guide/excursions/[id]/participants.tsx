@@ -14,12 +14,13 @@ const ParticipantsPage: React.FC = () => {
   const { id } = router.query;
   const { user, isLoading: authLoading } = useAuth();
   const { getExcursion } = useExcursions();
-  const { getExcursionBookings, getBookingStats } = useBookings();
+  const { getExcursionBookings, getBookingStats, cancelBooking } = useBookings();
   const [excursion, setExcursion] = useState<Excursion | null>(null);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [stats, setStats] = useState<BookingStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id && typeof id === 'string' && user) {
@@ -82,6 +83,25 @@ const ParticipantsPage: React.FC = () => {
         return 'Отменено';
       default:
         return 'Неизвестно';
+    }
+  };
+
+  const handleCancelBooking = async (bookingId: string, participantName: string) => {
+    if (!confirm(`Вы уверены, что хотите отменить запись участника ${participantName}?`)) {
+      return;
+    }
+
+    try {
+      setCancellingId(bookingId);
+      await cancelBooking(bookingId);
+      // Обновляем данные после отмены
+      if (id && typeof id === 'string') {
+        await fetchData(id);
+      }
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -249,6 +269,7 @@ const ParticipantsPage: React.FC = () => {
                       <th className="text-center py-2 px-3 text-sm font-medium text-gray-900">Бинокль</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-gray-900">Заметки</th>
                       <th className="text-center py-2 px-3 text-sm font-medium text-gray-900">Дата записи</th>
+                      <th className="text-center py-2 px-3 text-sm font-medium text-gray-900">Действия</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -282,6 +303,20 @@ const ParticipantsPage: React.FC = () => {
                         <td className="py-3 px-3 text-center text-sm text-gray-600">
                           {new Date(booking.createdAt).toLocaleDateString('ru-RU')}
                         </td>
+                        <td className="py-3 px-3 text-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCancelBooking(
+                              booking.id, 
+                              `${booking.user.firstName} ${booking.user.lastName}`
+                            )}
+                            disabled={cancellingId === booking.id}
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            {cancellingId === booking.id ? 'Отменяем...' : 'Отменить'}
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -310,6 +345,7 @@ const ParticipantsPage: React.FC = () => {
                       <th className="text-center py-2 px-3 text-sm font-medium text-gray-900">Бинокль</th>
                       <th className="text-left py-2 px-3 text-sm font-medium text-gray-900">Заметки</th>
                       <th className="text-center py-2 px-3 text-sm font-medium text-gray-900">Дата записи</th>
+                      <th className="text-center py-2 px-3 text-sm font-medium text-gray-900">Действия</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -342,6 +378,20 @@ const ParticipantsPage: React.FC = () => {
                         </td>
                         <td className="py-3 px-3 text-center text-sm text-gray-600">
                           {new Date(booking.createdAt).toLocaleDateString('ru-RU')}
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCancelBooking(
+                              booking.id, 
+                              `${booking.user.firstName} ${booking.user.lastName}`
+                            )}
+                            disabled={cancellingId === booking.id}
+                            className="text-red-600 border-red-300 hover:bg-red-50"
+                          >
+                            {cancellingId === booking.id ? 'Отменяем...' : 'Отменить'}
+                          </Button>
                         </td>
                       </tr>
                     ))}

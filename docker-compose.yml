@@ -48,6 +48,7 @@ services:
       - JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
       - JWT_REFRESH_EXPIRES_IN=30d
       - PORT=3010
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - NODE_ENV=production
       - FRONTEND_URL=http://localhost:3011
     depends_on:

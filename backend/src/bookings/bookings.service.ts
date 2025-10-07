@@ -5,6 +5,7 @@ import { Booking, BookingStatus } from './booking.entity';
 import { Excursion } from '../excursions/excursion.entity';
 import { User } from '../users/user.entity';
 import { CreateBookingDto, UpdateBookingDto } from './dto/booking.dto';
+import { TelegramService } from '../telegram/telegram.service';
 
 @Injectable()
 export class BookingsService {
@@ -15,6 +16,7 @@ export class BookingsService {
     private excursionRepository: Repository<Excursion>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private telegramService: TelegramService,
   ) {}
 
   async createBooking(excursionId: string, userId: string, createBookingDto: CreateBookingDto): Promise<Booking> {
@@ -82,7 +84,38 @@ export class BookingsService {
       status,
     });
 
-    return await this.bookingRepository.save(booking);
+    const savedBooking = await this.bookingRepository.save(booking);
+
+    // Отправляем уведомления
+    // 1. Уведомление участнику
+    await this.telegramService.notifyParticipantBooked(
+      userId,
+      excursion.title,
+      status,
+      createBookingDto.peopleCount,
+    );
+
+    // 2. Уведомление экскурсоводу
+    if (excursion.guideId) {
+      const participantName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+      await this.telegramService.notifyGuideNewBooking(
+        excursion.guideId,
+        excursion.title,
+        participantName,
+        createBookingDto.peopleCount,
+        status,
+      );
+    }
+
+    // 3. Уведомление админам
+    const participantName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email;
+    await this.telegramService.notifyAdminsNewBooking(
+      excursion.title,
+      participantName,
+      createBookingDto.peopleCount,
+    );
+
+    return savedBooking;
   }
 
   async findUserBookings(userId: string): Promise<Booking[]> {
@@ -166,14 +199,57 @@ export class BookingsService {
     }
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
+    const excursion = await this.excursionRepository.findOne({
+      where: { id: booking.excursionId },
+    });
 
-    // Проверяем права: пользователь может отменять только свои бронирования, админы - любые
-    if (booking.userId !== userId && user.role !== 'admin') {
+    if (!excursion) {
+      throw new NotFoundException('Экскурсия не найдена');
+    }
+
+    // Проверяем права: пользователь может отменять только свои бронирования, 
+    // админы и экскурсоводы (своих экскурсий) - любые
+    const isOwner = booking.userId === userId;
+    const isAdmin = user.role === 'admin';
+    const isGuide = user.role === 'guide' && excursion.guideId === userId;
+
+    if (!isOwner && !isAdmin && !isGuide) {
       throw new ForbiddenException('Вы можете отменять только свои бронирования');
     }
 
+    // Получаем информацию об участнике для уведомлений
+    const participant = await this.userRepository.findOne({ where: { id: booking.userId } });
+    const participantName = participant 
+      ? `${participant.firstName || ''} ${participant.lastName || ''}`.trim() || participant.email
+      : 'Неизвестный участник';
+
     // Удаляем бронирование
     await this.bookingRepository.remove(booking);
+
+    // Отправляем уведомления
+    // 1. Уведомление участнику (если отменил не он сам)
+    if (booking.userId !== userId) {
+      await this.telegramService.notifyParticipantCancelled(
+        booking.userId,
+        excursion.title,
+        userId,
+      );
+    }
+
+    // 2. Уведомление экскурсоводу (если отменил не он сам)
+    if (excursion.guideId && excursion.guideId !== userId) {
+      await this.telegramService.notifyGuideCancellation(
+        excursion.guideId,
+        excursion.title,
+        participantName,
+      );
+    }
+
+    // 3. Уведомление админам
+    await this.telegramService.notifyAdminsCancellation(
+      excursion.title,
+      participantName,
+    );
 
     // Проверяем, можно ли перевести кого-то из резерва в подтвержденные
     await this.promoteFromReserve(booking.excursionId);
@@ -213,6 +289,31 @@ export class BookingsService {
       if (totalConfirmedPeople + reserveBooking.peopleCount <= excursion.capacity) {
         reserveBooking.status = BookingStatus.CONFIRMED;
         await this.bookingRepository.save(reserveBooking);
+
+        // Отправляем уведомление о переводе из резерва
+        await this.telegramService.notifyParticipantPromoted(
+          reserveBooking.userId,
+          excursion.title,
+        );
+
+        // Уведомляем экскурсовода о новом подтвержденном участнике
+        if (excursion.guideId) {
+          const participant = await this.userRepository.findOne({ 
+            where: { id: reserveBooking.userId } 
+          });
+          const participantName = participant 
+            ? `${participant.firstName || ''} ${participant.lastName || ''}`.trim() || participant.email
+            : 'Неизвестный участник';
+
+          await this.telegramService.notifyGuideNewBooking(
+            excursion.guideId,
+            excursion.title,
+            participantName,
+            reserveBooking.peopleCount,
+            'CONFIRMED',
+          );
+        }
+
         break; // Переводим только одно бронирование за раз
       }
     }

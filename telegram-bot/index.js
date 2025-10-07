@@ -88,20 +88,19 @@ bot.onText(/\/link (.+)/, async (msg, match) => {
   const code = match[1].trim().toUpperCase();
   const telegramId = msg.from.id.toString();
 
+  console.log(`Попытка привязки: код=${code}, telegramId=${telegramId}`);
+
   try {
-    // First, generate a code for this user
-    const generateResponse = await apiRequest('/telegram/generate-code', 'POST', {
+    // Проверяем код через публичный endpoint
+    const verifyResponse = await apiRequest('/telegram/public/verify-code', 'POST', {
+      code: code,
       telegramId: telegramId
     });
 
-    if (generateResponse.code === code) {
-      // Code matches, now link the account
-      const linkResponse = await apiRequest('/telegram/link', 'POST', {
-        code: code
-      });
+    console.log('Ответ от API:', verifyResponse);
 
-      if (linkResponse.success) {
-        bot.sendMessage(chatId, `
+    if (verifyResponse.valid && verifyResponse.success) {
+      bot.sendMessage(chatId, `
 ✅ Отлично! Ваш Telegram аккаунт успешно привязан!
 
 Теперь вы будете получать уведомления:
@@ -111,16 +110,14 @@ bot.onText(/\/link (.+)/, async (msg, match) => {
 • О других важных событиях
 
 Спасибо за использование BirdWatch! 🦅
-        `);
-      } else {
-        bot.sendMessage(chatId, '❌ Ошибка при привязке аккаунта. Попробуйте снова.');
-      }
+      `);
     } else {
-      bot.sendMessage(chatId, '❌ Неверный код. Убедитесь, что вы ввели код правильно.');
+      bot.sendMessage(chatId, `❌ ${verifyResponse.message || 'Ошибка при привязке аккаунта'}`);
     }
   } catch (error) {
     console.error('Link error:', error);
-    bot.sendMessage(chatId, '❌ Произошла ошибка. Попробуйте позже или обратитесь в поддержку.');
+    console.error('Error details:', error.response?.data || error.message);
+    bot.sendMessage(chatId, '❌ Произошла ошибка при привязке. Попробуйте позже или обратитесь в поддержку.');
   }
 });
 
