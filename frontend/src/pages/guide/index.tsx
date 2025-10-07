@@ -276,6 +276,14 @@ const GuideDashboard: React.FC = () => {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => router.push(`/guide/excursions/${excursion.id}/edit`)}
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              Редактировать
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => router.push(`/guide/excursions/${excursion.id}/participants`)}
                             >
                               Участники
